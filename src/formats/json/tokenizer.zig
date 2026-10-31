@@ -52,8 +52,8 @@ inline fn tokenize_literal(
 }
 
 inline fn tokenize_string(bytes: []const u8) TokenizerError!Token {
-    if (bytes.len < 2) return TokenizerError.UnterminatedString;
     var idx: usize = 1;
+    if (bytes.len < 2) return TokenizerError.UnterminatedString;
     while (idx < bytes.len) : (idx += if (bytes[idx] == '\\') 2 else 1) {
         if (bytes[idx] == '"') return .{ .String = bytes[1..idx] };
     }
