@@ -194,3 +194,38 @@ test "[tokenize] object" {
     };
     try testing.expectEqualDeep(expected, actual.items);
 }
+
+test "[tokenize] error - unexpected character" {
+    try testing.expectError(
+        Json.TokenizerError.UnexpectedCharacter,
+        Json.tokenize("@", testing.allocator),
+    );
+}
+
+test "[tokenize] error - invalid literal" {
+    try testing.expectError(
+        Json.TokenizerError.InvalidLiteral,
+        Json.tokenize("tru", testing.allocator),
+    );
+}
+
+test "[tokenize] error - unterminated string" {
+    try testing.expectError(
+        Json.TokenizerError.UnterminatedString,
+        Json.tokenize("\"hello", testing.allocator),
+    );
+}
+
+test "[tokenize] error - invalid number" {
+    try testing.expectError(
+        Json.TokenizerError.InvalidNumber,
+        Json.tokenize("-", testing.allocator),
+    );
+}
+
+test "[tokenize] whitespace only" {
+    var actual = try Json.tokenize("   \n\t", testing.allocator);
+    defer actual.deinit(testing.allocator);
+
+    try testing.expectEqual(@as(usize, 0), actual.items.len);
+}

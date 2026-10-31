@@ -82,6 +82,7 @@ pub fn tokenize(input: []const u8, gpa: std.mem.Allocator) !std.ArrayList(Token)
     while (idx < input.len) {
         // skip white space
         while (idx < input.len and std.ascii.isWhitespace(input[idx])) : (idx += 1) {}
+        if (idx == input.len) break;
         // tokenize
         const token = switch (input[idx]) {
             '{' => Token.LeftBrace,
