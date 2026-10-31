@@ -149,7 +149,7 @@ test "[tokenize] array - all literal" {
 test "[tokenize] object" {
     const allocator = testing.allocator;
     const input =
-        \\{"name": "Alice", "loveTo''": ["run","walk",] ,, "null": null, "true": true, "false": false, "age": {"number": 50}}
+        \\{"name": "Alice", "loveTo''": ["run","\"walk",] ,, "null": null, "true": true, "false": false, "age": {"number": 50}}
     ;
     // TODO add oute qute
     var actual = try Json.tokenize(input, allocator);
@@ -166,7 +166,7 @@ test "[tokenize] object" {
         .LeftBracket,
         .{ .String = "run" },
         .Comma,
-        .{ .String = "walk" },
+        .{ .String = "\\\"walk" },
         .Comma,
         .RightBracket,
         .Comma,
