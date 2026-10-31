@@ -57,6 +57,7 @@ const Tokenizer = struct {
     }
 
     inline fn tokenize_string(bytes: []const u8) TokenizerError!Token {
+        if (bytes.len < 2) return TokenizerError.UnterminatedString;
         const len = (std.mem.indexOfScalar(u8, bytes[1..], '"') orelse return TokenizerError.UnterminatedString);
         return Token{ .String = bytes[1..(1 + len)] };
     }
