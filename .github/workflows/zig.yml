@@ -57,14 +57,17 @@ jobs:
         run: |
           zig-cov test \
             --fail-under=80 \
+            --exclude=tests/ \
             --format=summary
 
           zig-cov test \
             --format=lcov \
+            --exclude=tests/ \
             --output=coverage.lcov
 
           zig-cov test \
             --format=html \
+            --exclude=tests/ \
             --output=coverage.html
 
       # Upload LCOV report.
