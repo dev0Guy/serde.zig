@@ -81,7 +81,9 @@ const Tokenizer = struct {
         var array: std.ArrayList(Token) = .empty;
         var idx: usize = 0;
         while (idx < input.len) {
+            // skip white space
             while (idx < input.len and std.ascii.isWhitespace(input[idx])) : (idx += 1) {}
+            // tokenize
             const token = switch (input[idx]) {
                 '{' => Token.LeftBrace,
                 '}' => Token.RightBrace,
