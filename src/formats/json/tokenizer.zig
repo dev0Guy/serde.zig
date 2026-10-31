@@ -76,6 +76,25 @@ inline fn tokenize_number(bytes: []const u8) TokenizerError!Token {
     return .{ .Number = bytes[0..idx] };
 }
 
+inline fn tokenize_char(
+    input: []const u8,
+) TokenizerError!Token {
+    return switch (input[0]) {
+        '{' => .LeftBrace,
+        '}' => .RightBrace,
+        '[' => .LeftBracket,
+        ']' => .RightBracket,
+        ':' => .Colon,
+        ',' => .Comma,
+        't' => try tokenize_literal(input, Token.true_token, .True),
+        'f' => try tokenize_literal(input, Token.false_token, .False),
+        'n' => try tokenize_literal(input, Token.null_token, .Null),
+        '"' => try tokenize_string(input),
+        '0'...'9', '-' => try tokenize_number(input),
+        else => return TokenizerError.UnexpectedCharacter,
+    };
+}
+
 pub fn tokenize(input: []const u8, gpa: std.mem.Allocator) !std.ArrayList(Token) {
     var array: std.ArrayList(Token) = .empty;
     var idx: usize = 0;
@@ -84,20 +103,7 @@ pub fn tokenize(input: []const u8, gpa: std.mem.Allocator) !std.ArrayList(Token)
         while (idx < input.len and std.ascii.isWhitespace(input[idx])) : (idx += 1) {}
         if (idx == input.len) break;
         // tokenize
-        const token = switch (input[idx]) {
-            '{' => Token.LeftBrace,
-            '}' => Token.RightBrace,
-            '[' => Token.LeftBracket,
-            ']' => Token.RightBracket,
-            ':' => Token.Colon,
-            ',' => Token.Comma,
-            't' => try tokenize_literal(input[idx..], Token.true_token, Token.True),
-            'f' => try tokenize_literal(input[idx..], Token.false_token, Token.False),
-            'n' => try tokenize_literal(input[idx..], Token.null_token, Token.Null),
-            '"' => try tokenize_string(input[idx..]),
-            '0'...'9', '-' => try tokenize_number(input[idx..]),
-            else => return TokenizerError.UnexpectedCharacter,
-        };
+        const token = try tokenize_char(input[idx..]);
         try array.append(gpa, token);
         idx += token.len();
     }
