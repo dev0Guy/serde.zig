@@ -105,7 +105,7 @@ pub fn tokenize(input: []const u8, gpa: std.mem.Allocator) !std.ArrayList(Token)
         // tokenize
         const token = try tokenize_char(input[idx..]);
         try array.append(gpa, token);
-        idx = idx +| token.len();
+        idx +|= token.len();
     }
     return array;
 }
