@@ -44,13 +44,9 @@ inline fn tokenize_literal(
     expected: []const u8,
     token: Token,
 ) TokenizerError!Token {
-    if (value.len < expected.len) {
-        return TokenizerError.InvalidLiteral;
-    }
+    if (value.len < expected.len) return TokenizerError.InvalidLiteral;
 
-    if (!std.mem.eql(u8, value[0..expected.len], expected)) {
-        return TokenizerError.InvalidLiteral;
-    }
+    if (!std.mem.eql(u8, value[0..expected.len], expected)) return TokenizerError.InvalidLiteral;
 
     return token;
 }
