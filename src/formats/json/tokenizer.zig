@@ -40,26 +40,20 @@ const Token = union(enum) {
 };
 
 const Tokenizer = struct {
-    inline fn tokenize_true(value: []const u8) TokenizerError!Token {
-        const expected_len = Token.true_token.len;
-        if (value.len < expected_len) return TokenizerError.InvalidLiteral;
-        if (!std.mem.eql(u8, value[0..expected_len], Token.true_token)) return TokenizerError.InvalidLiteral;
-        return Token.True;
-    }
+    inline fn tokenize_literal(
+        value: []const u8,
+        expected: []const u8,
+        token: Token,
+    ) TokenizerError!Token {
+        if (value.len < expected.len) {
+            return TokenizerError.InvalidLiteral;
+        }
 
-    inline fn tokenize_false(value: []const u8) TokenizerError!Token {
-        const expected_len = Token.false_token.len;
-        if (value.len < expected_len) return TokenizerError.InvalidLiteral;
-        if (!std.mem.eql(u8, value[0..expected_len], Token.false_token)) return TokenizerError.InvalidLiteral;
-        return Token.False;
-    }
+        if (!std.mem.eql(u8, value[0..expected.len], expected)) {
+            return TokenizerError.InvalidLiteral;
+        }
 
-    inline fn tokenize_null(value: []const u8) TokenizerError!Token {
-        const expected_len = Token.null_token.len;
-        if (value.len < expected_len) return TokenizerError.InvalidLiteral;
-        std.debug.print("got: {s}, expected: {s}\n", .{ value[0..expected_len], Token.null_token });
-        if (!std.mem.eql(u8, value[0..expected_len], Token.null_token)) return TokenizerError.InvalidLiteral;
-        return Token.Null;
+        return token;
     }
 
     inline fn tokenize_string(bytes: []const u8) TokenizerError!Token {
@@ -95,9 +89,9 @@ const Tokenizer = struct {
                 ']' => Token.RightBracket,
                 ':' => Token.Colon,
                 ',' => Token.Comma,
-                't' => try tokenize_true(input[idx..]),
-                'f' => try tokenize_false(input[idx..]),
-                'n' => try tokenize_null(input[idx..]),
+                't' => try tokenize_literal(input[idx..], Token.true_token, Token.True),
+                'f' => try tokenize_literal(input[idx..], Token.false_token, Token.False),
+                'n' => try tokenize_literal(input[idx..], Token.null_token, Token.Null),
                 '"' => try tokenize_string(input[idx..]),
                 '0'...'9', '-' => try tokenize_number(input[idx..]),
                 else => return TokenizerError.UnexpectedCharacter,
