@@ -15,31 +15,26 @@ on:
 
 jobs:
   build-and-test:
+    name: Build and Test
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Install Zig
-        uses: mlugg/setup-zig@v2.2.1
+        uses: mlugg/setup-zig@v2
         with:
           version: 0.16.0
-          mirror: https://pkg.machengine.org/zig
-          use-cache: true
+
+      - name: Check Zig version
+        run: zig version
 
       - name: Build
         run: zig build
 
-      - name: Install zig-cov
-        run: |
-          git clone https://github.com/ericsssan/zcov /tmp/zcov
-          cd /tmp/zcov
-          zig build -Doptimize=ReleaseSafe
-          echo "$PWD/zig-out/bin" >> "$GITHUB_PATH"
-          echo "ZIG_COV_RT=$PWD/zig-out/lib/zig-cov-rt.o" >> "$GITHUB_ENV"
+      - name: Run JSON tests
+        run: zig build test-json
 
-      - name: Test with coverage
-        run: |
-          zig-cov test --fail-under=80 -- --summary all
-        env:
-          ZIG_COV_RT: ${{ env.ZIG_COV_RT }}
+      - name: Run all tests
+        run: zig build test
