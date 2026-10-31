@@ -1,1 +1,1 @@
-[![codecov](https://codecov.io/gh/USERNAME/REPOSITORY/branch/main/graph/badge.svg)](https://codecov.io/gh/USERNAME/REPOSITORY)
+[![codecov](https://codecov.io/gh/dev0Guy/serde.zig/graph/badge.svg?token=WZLRICBSUR)](https://codecov.io/gh/dev0Guy/serde.zig)
