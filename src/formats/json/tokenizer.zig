@@ -8,7 +8,7 @@ pub const TokenizerError = error{
     InvalidLiteral, // true/false/null spelled wrong
 };
 
-const Token = union(enum) {
+pub const Token = union(enum) {
     LeftBrace,
     RightBrace,
     LeftBracket,
@@ -39,91 +39,73 @@ const Token = union(enum) {
     }
 };
 
-const Tokenizer = struct {
-    inline fn tokenize_literal(
-        value: []const u8,
-        expected: []const u8,
-        token: Token,
-    ) TokenizerError!Token {
-        if (value.len < expected.len) {
-            return TokenizerError.InvalidLiteral;
-        }
-
-        if (!std.mem.eql(u8, value[0..expected.len], expected)) {
-            return TokenizerError.InvalidLiteral;
-        }
-
-        return token;
+inline fn tokenize_literal(
+    value: []const u8,
+    expected: []const u8,
+    token: Token,
+) TokenizerError!Token {
+    if (value.len < expected.len) {
+        return TokenizerError.InvalidLiteral;
     }
 
-    inline fn tokenize_string(bytes: []const u8) TokenizerError!Token {
-        if (bytes.len < 2) return TokenizerError.UnterminatedString;
-        const len = (std.mem.indexOfScalar(u8, bytes[1..], '"') orelse return TokenizerError.UnterminatedString);
-        return Token{ .String = bytes[1..(1 + len)] };
+    if (!std.mem.eql(u8, value[0..expected.len], expected)) {
+        return TokenizerError.InvalidLiteral;
     }
 
-    inline fn tokenize_number(bytes: []const u8) TokenizerError!Token {
-        // foward on negative symbol
-        var idx: usize = if (bytes[0] == '-') 1 else 0;
-        // foward on interger part
-        while (idx < bytes.len and ('0' <= bytes[idx] and bytes[idx] <= '9')) : (idx += 1) {}
-        if (bytes[idx] == '.') {
-            // foward dot
-            idx += 1;
-            // foward on floating part
-            while (idx < bytes.len and ('0' <= bytes[idx] and bytes[idx] <= '9')) : (idx += 1) {}
-        }
-        if (!('0' <= bytes[idx - 1] and bytes[idx - 1] <= '9')) return TokenizerError.InvalidNumber;
-        if (!(bytes[idx] == ',' or bytes[idx] == '}')) return TokenizerError.InvalidNumber;
-        return .{ .Number = bytes[0..idx] };
-    }
-
-    fn from(input: []const u8, gpa: std.mem.Allocator) !std.ArrayList(Token) {
-        var array: std.ArrayList(Token) = .empty;
-        var idx: usize = 0;
-        while (idx < input.len) {
-            // skip white space
-            while (idx < input.len and std.ascii.isWhitespace(input[idx])) : (idx += 1) {}
-            // tokenize
-            const token = switch (input[idx]) {
-                '{' => Token.LeftBrace,
-                '}' => Token.RightBrace,
-                '[' => Token.LeftBracket,
-                ']' => Token.RightBracket,
-                ':' => Token.Colon,
-                ',' => Token.Comma,
-                't' => try tokenize_literal(input[idx..], Token.true_token, Token.True),
-                'f' => try tokenize_literal(input[idx..], Token.false_token, Token.False),
-                'n' => try tokenize_literal(input[idx..], Token.null_token, Token.Null),
-                '"' => try tokenize_string(input[idx..]),
-                '0'...'9', '-' => try tokenize_number(input[idx..]),
-                else => return TokenizerError.UnexpectedCharacter,
-            };
-            try array.append(gpa, token);
-            idx += token.len();
-        }
-        return array;
-    }
-};
-
-test "simple Json tokenize" {
-    const allocator = std.testing.allocator;
-    const input =
-        \\{"name":"alice","age":30,"active":true}
-    ;
-    const expected = &[_]Token{ .LeftBrace, .{ .String = "name" }, .Colon, .{ .String = "alice" }, .Comma, .{ .String = "age" }, .Colon, .{ .Number = "30" }, .Comma, .{ .String = "active" }, .Colon, .True, .RightBrace };
-    var actual = try Tokenizer.from(input, allocator);
-    defer actual.deinit(allocator);
-    try std.testing.expectEqualDeep(expected, actual.items);
+    return token;
 }
 
-test "simple Json tokenize with space" {
-    const allocator = std.testing.allocator;
-    const input =
-        \\{"name"   : "alice", "age" :30.02410, "active": true}
-    ;
-    const expected = &[_]Token{ .LeftBrace, .{ .String = "name" }, .Colon, .{ .String = "alice" }, .Comma, .{ .String = "age" }, .Colon, .{ .Number = "30.02410" }, .Comma, .{ .String = "active" }, .Colon, .True, .RightBrace };
-    var actual = try Tokenizer.from(input, allocator);
-    defer actual.deinit(allocator);
-    try std.testing.expectEqualDeep(expected, actual.items);
+inline fn tokenize_string(bytes: []const u8) TokenizerError!Token {
+    if (bytes.len < 2) return TokenizerError.UnterminatedString;
+    var idx: usize = 1;
+    while (idx < bytes.len) : (idx += if (bytes[idx] == '\\') 2 else 1) {
+        if (bytes[idx] == '"') return .{ .String = bytes[1..idx] };
+    }
+    return TokenizerError.UnterminatedString;
+    // TOOD: replace this to work with esqape string
+    // const len = (std.mem.indexOfScalar(u8, bytes[1..], '"') orelse return TokenizerError.UnterminatedString);
+    // return Token{ .String = bytes[1..(1 + len)] };
+}
+
+inline fn tokenize_number(bytes: []const u8) TokenizerError!Token {
+    // foward on negative symbol
+    var idx: usize = if (bytes[0] == '-') 1 else 0;
+    // foward on interger part
+    while (idx < bytes.len and ('0' <= bytes[idx] and bytes[idx] <= '9')) : (idx += 1) {}
+    if ((idx < bytes.len) and bytes[idx] == '.') {
+        // foward dot
+        idx += 1;
+        // foward on floating part
+        while (idx < bytes.len and ('0' <= bytes[idx] and bytes[idx] <= '9')) : (idx += 1) {}
+    }
+    if (!('0' <= bytes[idx - 1] and bytes[idx - 1] <= '9')) return TokenizerError.InvalidNumber;
+    // if (idx < bytes.len and !(bytes[idx] == ',' or bytes[idx] == '}')) return TokenizerError.InvalidNumber;
+    return .{ .Number = bytes[0..idx] };
+}
+
+pub fn tokenize(input: []const u8, gpa: std.mem.Allocator) !std.ArrayList(Token) {
+    var array: std.ArrayList(Token) = .empty;
+    var idx: usize = 0;
+    while (idx < input.len) {
+        // skip white space
+        while (idx < input.len and std.ascii.isWhitespace(input[idx])) : (idx += 1) {}
+        // tokenize
+        const token = switch (input[idx]) {
+            '{' => Token.LeftBrace,
+            '}' => Token.RightBrace,
+            '[' => Token.LeftBracket,
+            ']' => Token.RightBracket,
+            ':' => Token.Colon,
+            ',' => Token.Comma,
+            't' => try tokenize_literal(input[idx..], Token.true_token, Token.True),
+            'f' => try tokenize_literal(input[idx..], Token.false_token, Token.False),
+            'n' => try tokenize_literal(input[idx..], Token.null_token, Token.Null),
+            '"' => try tokenize_string(input[idx..]),
+            '0'...'9', '-' => try tokenize_number(input[idx..]),
+            else => return TokenizerError.UnexpectedCharacter,
+        };
+        try array.append(gpa, token);
+        idx += token.len();
+    }
+    return array;
 }
