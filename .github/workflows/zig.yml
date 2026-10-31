@@ -15,14 +15,30 @@ on:
 
 jobs:
   build-and-test:
-    name: Build and Test
+    name: Build, Test and Coverage
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Zig
+      # Build zcov using its supported Zig development version.
+      - name: Install Zig (zcov)
+        uses: mlugg/setup-zig@v2
+        with:
+          version: 0.17.0-dev.1509+bb296ab9b
+
+      - name: Build zcov
+        run: |
+          git clone https://github.com/ericsssan/zcov /tmp/zcov
+          cd /tmp/zcov
+          zig build -Doptimize=ReleaseSafe
+
+          echo "$PWD/zig-out/bin" >> "$GITHUB_PATH"
+          echo "ZIG_COV_RT=$PWD/zig-out/lib/zig-cov-rt.o" >> "$GITHUB_ENV"
+
+      # Install the project's Zig version.
+      - name: Install Zig 0.16
         uses: mlugg/setup-zig@v2
         with:
           version: 0.16.0
@@ -33,8 +49,35 @@ jobs:
       - name: Build
         run: zig build
 
-      - name: Run JSON tests
-        run: zig build test-json
-
-      - name: Run all tests
+      - name: Run tests
         run: zig build test
+
+      # Generate both reports and enforce minimum coverage.
+      - name: Run zcov
+        run: |
+          zig-cov test \
+            --fail-under=80 \
+            --format=summary
+
+          zig-cov test \
+            --format=lcov \
+            --output=coverage.lcov
+
+          zig-cov test \
+            --format=html \
+            --output=coverage.html
+
+      # Upload LCOV report.
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage.lcov
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      # Keep HTML report available in GitHub Actions.
+      - name: Upload HTML coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: zig-coverage-report
+          path: coverage.html
+          retention-days: 14
