@@ -229,3 +229,20 @@ test "[tokenize] whitespace only" {
 
     try testing.expectEqual(@as(usize, 0), actual.items.len);
 }
+
+test "[Token.len] all variants" {
+    const Token = Json.Token;
+    try testing.expectEqual(@as(usize, 1), (Token{ .LeftBrace = {} }).len());
+    try testing.expectEqual(@as(usize, 1), (Token{ .RightBrace = {} }).len());
+    try testing.expectEqual(@as(usize, 1), (Token{ .LeftBracket = {} }).len());
+    try testing.expectEqual(@as(usize, 1), (Token{ .RightBracket = {} }).len());
+    try testing.expectEqual(@as(usize, 1), (Token{ .Colon = {} }).len());
+    try testing.expectEqual(@as(usize, 1), (Token{ .Comma = {} }).len());
+
+    try testing.expectEqual(@as(usize, 4), (Token{ .True = {} }).len());
+    try testing.expectEqual(@as(usize, 5), (Token{ .False = {} }).len());
+    try testing.expectEqual(@as(usize, 4), (Token{ .Null = {} }).len());
+
+    try testing.expectEqual(@as(usize, 3), (Token{ .Number = "123" }).len());
+    try testing.expectEqual(@as(usize, 5), (Token{ .String = "abc" }).len());
+}
