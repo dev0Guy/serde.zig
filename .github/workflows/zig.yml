@@ -2,9 +2,16 @@ name: Zig CI
 
 on:
   push:
-    branches: [main, master]
+    branches:
+      - main
+      - master
+      - feature-json
+
   pull_request:
-    branches: [main, master]
+    branches:
+      - main
+      - master
+      - feature-json
 
 jobs:
   build-and-test:
