@@ -1,0 +1,36 @@
+name: Zig CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Zig
+        uses: mlugg/setup-zig@v2
+        with:
+          version: 0.16.0
+
+      - name: Build
+        run: zig build
+
+      - name: Install zig-cov
+        run: |
+          git clone https://github.com/ericsssan/zcov /tmp/zcov
+          cd /tmp/zcov
+          zig build -Doptimize=ReleaseSafe
+          echo "$PWD/zig-out/bin" >> "$GITHUB_PATH"
+          echo "ZIG_COV_RT=$PWD/zig-out/lib/zig-cov-rt.o" >> "$GITHUB_ENV"
+
+      - name: Test with coverage
+        run: |
+          zig-cov test --fail-under=80 -- --summary all
+        env:
+          ZIG_COV_RT: ${{ env.ZIG_COV_RT }}
