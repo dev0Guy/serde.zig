@@ -62,9 +62,6 @@ inline fn tokenize_string(bytes: []const u8) TokenizerError!Token {
         if (bytes[idx] == '"') return .{ .String = bytes[1..idx] };
     }
     return TokenizerError.UnterminatedString;
-    // TOOD: replace this to work with esqape string
-    // const len = (std.mem.indexOfScalar(u8, bytes[1..], '"') orelse return TokenizerError.UnterminatedString);
-    // return Token{ .String = bytes[1..(1 + len)] };
 }
 
 inline fn tokenize_number(bytes: []const u8) TokenizerError!Token {
