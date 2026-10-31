@@ -76,6 +76,8 @@ jobs:
         with:
           files: coverage.lcov
           token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          verbose: true
 
       # Keep HTML report available in GitHub Actions.
       - name: Upload HTML coverage report
