@@ -1,4 +1,4 @@
-const tokenizer = @import("tokenizer.zig");
+const tokenizer = @import("lexer.zig");
 
 pub const tokenize = tokenizer.tokenize;
 pub const Token = tokenizer.Token;
